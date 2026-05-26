@@ -1,0 +1,994 @@
+<!doctype html>
+<html lang="en" class="h-full scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Something About You | Chaerunisa</title>
+    <!-- Google Fonts: Elegant headings & crisp sans-serif -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+            },
+            colors: {
+              skyblue: '#38bdf8',
+              lavender: '#a78bfa',
+              darkTheme: {
+                bg: '#0a0510',
+                indigo: '#2d1b4d',
+                text: '#f3f4f6',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    
+    <style type="text/css">
+      body {
+        background-color: #0a0510;
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+        color: #f3f4f6;
+        overflow-x: hidden;
+      }
+      
+      /* Glowing and Layout styles matching Elegant Dark specification */
+      .viewport-container {
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        background: radial-gradient(circle at top right, #2d1b4d, #0a0510);
+        position: relative;
+        z-index: 10;
+      }
+
+      /* Sidebar (Desktop 340px) */
+      .sidebar {
+        background: rgba(10, 5, 16, 0.5);
+        border-right: 1px solid rgba(167, 139, 250, 0.15);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      }
+
+      .glow-shadow-indigo {
+        box-shadow: 0 0 25px rgba(167, 139, 250, 0.15);
+      }
+
+      .glow-shadow-skyblue {
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
+      }
+
+      .color-swatch {
+        height: 80px;
+        width: 100%;
+        border-radius: 12px;
+      }
+
+      .band-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(167, 139, 250, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        border-radius: 8px;
+      }
+
+      .band-item:hover {
+        background: rgba(167, 139, 250, 0.08);
+        transform: translateX(4px);
+      }
+
+      .band-item.active-track {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.3);
+      }
+
+      .play-btn-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid #38bdf8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #38bdf8;
+        font-size: 11px;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .band-item:hover .play-btn-circle {
+        background: #38bdf8;
+        color: #fff;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+      }
+
+      .hero-text {
+        color: #fff;
+        text-shadow: 0 0 20px rgba(167, 139, 250, 0.3);
+      }
+
+      /* Vinyl spins when playing */
+      .spin {
+        animation: spin-animation 15s linear infinite;
+      }
+      .spin-paused {
+        animation-play-state: paused;
+      }
+
+      @keyframes spin-animation {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Custom slider track */
+      input[type="range"]::-webkit-slider-thumb {
+        background: #38bdf8;
+        box-shadow: 0 0 8px #38bdf8;
+      }
+
+      /* Equalizer animation bars */
+      .equalizer-bar {
+        transition: height 0.15s ease-in-out;
+      }
+    </style>
+    
+    <!-- Three.js Libraries via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  </head>
+  <body class="selection:bg-skyblue/30 selection:text-white overflow-x-hidden min-h-screen">
+
+    <!-- Falling Petals Background Canvas -->
+    <canvas id="bg-canvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Content Viewport -->
+    <div class="viewport-container">
+      
+      <!-- Responsive Outer Grid: Sidebar left, Main Panel right on LG screen -->
+      <div class="flex flex-col lg:flex-row w-full flex-grow relative z-10">
+        
+        <!-- SIDEBAR CONTAINER: Hero, About, and Player -->
+        <aside class="w-full lg:w-[350px] xl:w-[380px] lg:min-h-screen flex flex-col justify-between sidebar p-6 md:p-10 shrink-0 select-none z-20">
+          
+          <!-- Top Section: Logo & Titles -->
+          <div class="space-y-12">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-skyblue animate-pulse text-[10px] tracking-wider uppercase font-semibold"><i class="fa-solid fa-heart mr-1"></i> From Rijal For U Nis </span>
+              </div>
+              <h2 class="font-serif italic text-lavender text-sm tracking-[0.2em] uppercase mb-4">Made With Imagination And Expressiom</h2>
+              <h1 class="hero-text font-serif italic text-4xl md:text-5xl font-black tracking-tight leading-none mb-4">
+                Something <br/> About Chaerunisa.
+              </h1>
+              <div class="w-20 h-0.5 bg-gradient-to-r from-lavender to-skyblue rounded"></div>
+            </div>
+
+            <!-- About Her Section -->
+            <div class="space-y-4">
+              <h3 class="font-serif italic text-white text-xl md:text-2xl font-semibold">About Her</h3>
+              <p class="text-[13px] md:text-sm leading-relaxed text-zinc-400 font-light text-justify">
+                A soul composed of midnight melodies and gentle moonlight. She has an innate ability to find the hidden magic within the static of the world, wandering through pages of forgotten books and the deep, resonating chords of timeless rock anthems. She represents a peaceful sanctuary—a true dreamer with a tender heart of lavender.
+              </p>
+              <p class="text-[12px] italic text-lavender/80 font-serif">
+                "Like lavender, she thrives beautifully in quiet, starry spaces."
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom Section: Music Player Widget -->
+          <div class="mt-12 lg:mt-6 bg-gradient-to-br from-indigo-950/80 to-zinc-950/95 p-4 rounded-xl border border-skyblue/25 shadow-xl glow-shadow-skyblue">
+            
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-[8px] h-[8px] rounded-full bg-skyblue animate-ping"></span>
+                <span class="text-[10px] uppercase font-mono text-lavender font-semibold tracking-wider">Nisa Fav Music - Click Gambar Youtube Buat PLay Music Nya -</span>
+              </div>
+              <!-- Track Select dropdown -->
+              <select id="track-select" onchange="selectTrack(parseInt(this.value))" class="bg-zinc-900/90 border border-lavender/20 text-gray-300 text-[10px] rounded px-1.5 py-1 focus:outline-none focus:border-skyblue max-w-[130px]">
+                <option value="0">Evanescence — Bring Me To Life</option>
+                <option value="1">Linkin Park — In The End</option>
+                <option value="2">MCR — The World Is Ugly</option>
+                <option value="3">Avenged Sevenfold — Seize The Day</option>
+                <option value="4">Queen — Love of My Life</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-4.5 mb-3">
+              <!-- Animated Mini-vinyl preview -->
+              <div class="relative shrink-0">
+                <div id="mini-vinyl" class="w-12 h-12 rounded-full bg-zinc-900 border-2 border-dashed border-lavender/30 flex items-center justify-center spin spin-paused">
+                  <div class="w-4 h-4 rounded-full bg-gradient-to-tr from-lavender to-skyblue flex items-center justify-center">
+                    <div class="w-1.5 h-1.5 rounded-full bg-black"></div>
+                  </div>
+                </div>
+                <div class="absolute -top-1 -right-1 text-[9px] text-skyblue animate-bounce-slow">
+                  <i class="fa-solid fa-music"></i>
+                </div>
+              </div>
+
+              <!-- Track info -->
+              <div class="overflow-hidden flex-grow select-text flex justify-between items-center">
+                <div class="overflow-hidden">
+                  <div id="player-title" class="text-[13px] font-semibold text-white tracking-wide truncate">Bring Me To Life (Orchestral Cover)</div>
+                  <div id="player-artist" class="text-[10px] text-lavender font-mono">Evanescence</div>
+                </div>
+                <a id="player-yt-link" href="https://youtu.be/JixFMKqQU5w?si=Ghb4fGsN6_a2uV1l" target="_blank" rel="noopener noreferrer" class="shrink-0 ml-2 text-rose-500 hover:text-rose-400 transition-colors p-1.5 bg-rose-500/10 hover:bg-rose-500/20 rounded" title="Watch on YouTube">
+                  <i class="fa-brands fa-youtube text-sm animate-pulse"></i>
+                </a>
+              </div>
+            </div>
+
+            <!-- Scrubber bar -->
+            <div class="space-y-1">
+              <div onclick="seekAudio(event)" id="scrubber-container" class="w-full h-1 bg-zinc-800 rounded-full cursor-pointer relative overflow-hidden group">
+                <div id="scrubber-progress" class="h-full bg-skyblue rounded-full w-0 group-hover:bg-skyblue/90 transition-all duration-75"></div>
+              </div>
+              <div class="flex justify-between items-center text-[9px] text-zinc-500 font-mono">
+                <span id="current-time">0:00</span>
+                <span id="total-duration">3:30</span>
+              </div>
+            </div>
+
+            <!-- Music Controllers and Volume -->
+            <div class="flex items-center justify-between mt-2.5">
+              <div class="flex items-center gap-3 text-zinc-400">
+                <button onclick="prevTrack()" title="Previous Track" class="hover:text-white transition-colors cursor-pointer text-xs">
+                  <i class="fa-solid fa-backward"></i>
+                </button>
+                <button onclick="togglePlay()" id="player-play-btn" title="Play / Pause" class="w-7 h-7 rounded-full bg-skyblue text-zinc-950 flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer">
+                  <i id="player-play-icon" class="fa-solid fa-play text-[9px] ml-0.5"></i>
+                </button>
+                <button onclick="nextTrack()" title="Next Track" class="hover:text-white transition-colors cursor-pointer text-xs">
+                  <i class="fa-solid fa-forward"></i>
+                </button>
+              </div>
+
+              <!-- Volume Control -->
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="toggleMute()" id="mute-btn" class="text-zinc-500 hover:text-white transition-colors cursor-pointer text-[10px]">
+                  <i id="mute-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+                <input oninput="updateVolume(this.value)" id="volume-slider" type="range" min="0" max="1" step="0.05" value="0.7" class="w-16 h-0.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-skyblue focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Audio Tag (Haunting classical piano-driven loops used as beautiful, highly atmospheric high-fidelity stand-ins) -->
+            <audio id="audio-module" src="https://www.mfiles.co.uk/mp3-downloads/chopin-nocturne-op9-no2.mp3" preload="auto"></audio>
+            
+          </div>
+        </aside>
+
+        <!-- MAIN PANEL CONTENT: 3D interactive Lavender viewport center, and floating glass cards -->
+        <main class="flex-grow min-h-screen relative flex flex-col justify-between p-6 md:p-10 z-10 overflow-hidden">
+          
+          <!-- Outer Header overlay displaying instruction cues -->
+          <div class="w-full flex justify-between items-start gap-4">
+            <div class="bg-zinc-950/40 border border-lavender/10 text-lavender text-[9px] uppercase tracking-widest font-mono px-3 py-1.5 rounded-full backdrop-blur">
+              <i class="fa-solid fa-rotate animate-spin-slow text-zinc-400 mr-1"></i> drag to orbit stem | scroll to scale
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-[9px] tracking-widest font-mono uppercase text-zinc-400">interactive 3d flower live</span>
+            </div>
+          </div>
+
+          <!-- ABSOLUTELY CENTERED / ACCENTED HERO THREE.JS STAGE -->
+          <div class="absolute inset-0 z-0 pointer-events-auto flex items-center justify-center">
+            <div id="canvas-wrapper" class="w-full h-full max-w-4xl max-h-[85vh] mix-blend-screen opacity-95 transition-all duration-500 cursor-grab active:cursor-grabbing">
+              <!-- Three JS mounting container target -->
+              <div id="three-container" class="w-full h-full"></div>
+            </div>
+          </div>
+
+          <!-- DECORATIVE PETAL DOTS overlay -->
+          <div class="absolute inset-0 pointer-events-none z-0">
+            <div class="absolute top-[15%] left-[25%] w-1.5 h-3 bg-lavender/30 rounded-full rotate-45 animate-bounce-slow"></div>
+            <div class="absolute top-[35%] right-[20%] w-1 h-2 bg-skyblue/20 rounded-full -rotate-12 animate-pulse"></div>
+            <div class="absolute bottom-[25%] left-[45%] w-2 h-4 bg-lavender/25 rounded-full rotate-12"></div>
+            <div class="absolute bottom-[40%] right-[35%] w-1.5 h-3 bg-skyblue/25 rounded-full -rotate-45"></div>
+          </div>
+
+          <!-- FLOATING INFORMATION CARDS PANEL (Responsive Layout arrangement) -->
+          <div class="w-full flex flex-col md:flex-row justify-between items-stretch gap-6 md:gap-10 mt-auto pt-24 relative z-10">
+            
+            <!-- Card 1: Favorite Colors -->
+            <div class="glass-card flex-1 p-6 flex flex-col justify-between transition-all duration-300 hover:border-lavender/30 hover:shadow-indigo-500/10 hover:-translate-y-1">
+              <div>
+                <h4 class="font-serif italic text-lavender text-lg mb-4 flex items-center justify-between">
+                  <span>Nissa Fav Colors</span>
+                  <i class="fa-solid fa-palette text-sm opacity-55 text-zinc-400"></i>
+                </h4>
+                
+                <div class="flex gap-4 mb-4">
+                  <!-- Swatch purple -->
+                  <div class="flex-1">
+                    <div class="color-swatch bg-gradient-to-br from-[#8B5CF6] to-[#4c1d95] mb-2 shadow-lg shadow-purple-500/10"></div>
+                    <div class="text-[11px] font-semibold tracking-wide text-zinc-100 uppercase">Deep Lavender/Ungu </div>
+                    <div class="text-[9px] text-zinc-400/80 font-light mt-0.5">Nisa Suka Warna Ungu Lohh .</div>
+                  </div>
+
+                  <!-- Swatch skyblue -->
+                  <div class="flex-1">
+                    <div class="color-swatch bg-gradient-to-br from-[#38bdf8] to-[#0284c7] mb-2 shadow-lg shadow-skyblue/10"></div>
+                    <div class="text-[11px] font-semibold tracking-wide text-zinc-100 uppercase">Biru Muda / Sky Blue </div>
+                    <div class="text-[9px] text-zinc-400/80 font-light mt-0.5">Kalo biru muda warna favorite Rijal .</div>
+                  </div>
+                </div>
+              </div>
+              <p class="text-[10px] text-zinc-500 font-mono mt-2">Colour Code : VIOLET (0.83) + SKYBLUE (0.91)</p>
+            </div>
+
+            <!-- Card 2: Favorite Bands & Soundscapes -->
+            <div class="glass-card w-full md:w-[420px] lg:w-[440px] p-6 transition-all duration-300 hover:border-skyblue/30 hover:shadow-skyblue/5 hover:-translate-y-1">
+              <h4 class="font-serif italic text-skyblue text-[19px] mb-4 flex items-center justify-between">
+                <span>Favorite Rock & Metal Bands</span>
+                <i class="fa-solid fa-record-vinyl text-sm opacity-55 text-zinc-400"></i>
+              </h4>
+              
+              <div class="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                <!-- Band 1 -->
+                <div onclick="selectTrack(0)" id="band-item-0" class="band-item">
+                  <div class="select-text">
+                    <div class="text-xs font-semibold text-white tracking-wide">Evanescence</div>
+                    <div class="text-[9px] text-zinc-400">Gothic Metal / Orchestral & Piano Version</div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[9px] font-mono text-zinc-500">Bring Me To Life</span>
+                    <a href="https://youtu.be/JixFMKqQU5w?si=Ghb4fGsN6_a2uV1l" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-rose-500 hover:text-rose-400 transition-colors text-xs p-1 bg-rose-500/10 rounded flex items-center justify-center w-6 h-6 hover:scale-105 active:scale-95" title="Watch on YouTube">
+                      <i class="fa-brands fa-youtube"></i>
+                    </a>
+                    <div id="play-btn-0" class="play-btn-circle"><i class="fa-solid fa-play font-bold text-[9px]"></i></div>
+                  </div>
+                </div>
+
+                <!-- Band 2 -->
+                <div onclick="selectTrack(1)" id="band-item-1" class="band-item">
+                  <div class="select-text">
+                    <div class="text-xs font-semibold text-white tracking-wide">Linkin Park</div>
+                    <div class="text-[9px] text-zinc-400">Therapeutic Alternative / Ethereal Layers</div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[9px] font-mono text-zinc-500">In The End</span>
+                    <a href="https://youtu.be/eVTXPUF4Oz4?si=fSY9Y9M3dOE0l6ql" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-rose-500 hover:text-rose-400 transition-colors text-xs p-1 bg-rose-500/10 rounded flex items-center justify-center w-6 h-6 hover:scale-105 active:scale-95" title="Watch on YouTube">
+                      <i class="fa-brands fa-youtube"></i>
+                    </a>
+                    <div id="play-btn-1" class="play-btn-circle"><i class="fa-solid fa-play font-bold text-[9px]"></i></div>
+                  </div>
+                </div>
+
+                <!-- Band 3 -->
+                <div onclick="selectTrack(2)" id="band-item-2" class="band-item">
+                  <div class="select-text">
+                    <div class="text-xs font-semibold text-white tracking-wide">My Chemical Romance</div>
+                    <div class="text-[9px] text-zinc-400">Nostalgic Punk Rock & Dramatic Symphony</div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[9px] font-mono text-zinc-500">The World Is Ugly</span>
+                    <a href="https://youtu.be/Sfmzkj5QSto?si=7pxEh9OwecGFz_sC" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-rose-500 hover:text-rose-400 transition-colors text-xs p-1 bg-rose-500/10 rounded flex items-center justify-center w-6 h-6 hover:scale-105 active:scale-95" title="Watch on YouTube">
+                      <i class="fa-brands fa-youtube"></i>
+                    </a>
+                    <div id="play-btn-2" class="play-btn-circle"><i class="fa-solid fa-play font-bold text-[9px]"></i></div>
+                  </div>
+                </div>
+
+                <!-- Band 4 -->
+                <div onclick="selectTrack(3)" id="band-item-3" class="band-item">
+                  <div class="select-text">
+                    <div class="text-xs font-semibold text-white tracking-wide">Avenged Sevenfold</div>
+                    <div class="text-[9px] text-zinc-400">Melodic Gothic Hard Rock Power Ballad</div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[9px] font-mono text-zinc-500">Seize The Day</span>
+                    <a href="https://youtu.be/jUkoL9RE72o?si=eVUCpLQ3DE2y1ap8" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-rose-500 hover:text-rose-400 transition-colors text-xs p-1 bg-rose-500/10 rounded flex items-center justify-center w-6 h-6 hover:scale-105 active:scale-95" title="Watch on YouTube">
+                      <i class="fa-brands fa-youtube"></i>
+                    </a>
+                    <div id="play-btn-3" class="play-btn-circle"><i class="fa-solid fa-play font-bold text-[9px]"></i></div>
+                  </div>
+                </div>
+
+                <!-- Band 5 -->
+                <div onclick="selectTrack(4)" id="band-item-4" class="band-item">
+                  <div class="select-text">
+                    <div class="text-xs font-semibold text-white tracking-wide">Queen</div>
+                    <div class="text-[9px] text-zinc-400">Symphonious Orchestral Piano Rock Ballad</div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[9px] font-mono text-zinc-500">Love of My Life</span>
+                    <a href="https://youtu.be/sUJkCXE4sAA?si=xkyIU3K6UcRUpCJE" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-rose-500 hover:text-rose-400 transition-colors text-xs p-1 bg-rose-500/10 rounded flex items-center justify-center w-6 h-6 hover:scale-105 active:scale-95" title="Watch on YouTube">
+                      <i class="fa-brands fa-youtube"></i>
+                    </a>
+                    <div id="play-btn-4" class="play-btn-circle"><i class="fa-solid fa-play font-bold text-[9px]"></i></div>
+                  </div>
+                </div>
+
+              </div>
+              
+              <!-- Equalizer animation track synced bars -->
+              <div class="flex items-end justify-center gap-1.5 h-4 w-full mt-4 border-t border-lavender/5 pt-3">
+                <div class="equalizer-bar w-1 bg-lavender opacity-40 rounded-t h-[3px]"></div>
+                <div class="equalizer-bar w-1 bg-lavender opacity-60 rounded-t h-[3px]"></div>
+                <div class="equalizer-bar w-1 bg-lavender/80 rounded-t h-[3px]"></div>
+                <div class="equalizer-bar w-1 bg-skyblue rounded-t h-[3px]"></div>
+                <div class="equalizer-bar w-1 bg-skyblue/80 rounded-t h-[3px]"></div>
+                <div class="equalizer-bar w-1 bg-lavender/80 rounded-t h-[3px]"></div>
+                <div class="equalizer-bar w-1 bg-lavender opacity-50 rounded-t h-[3px]"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Footer Information overlay -->
+          <footer class="w-full flex justify-between items-center text-[10px] text-zinc-500 mt-6 pt-4 border-t border-lavender/5 select-none font-mono">
+            <div>&copy; 2026 SOMETHING ABOUT YOU</div>
+            <div class="flex items-center gap-1.5 text-zinc-600 hover:text-lavender transition-colors duration-300">
+              <span>MADE FOR HER SOUL</span>
+              <span class="text-skyblue"><i class="fa-solid fa-heart text-[8px]"></i></span>
+            </div>
+          </footer>
+
+        </main>
+      </div>
+
+    </div>
+
+    <!-- MAIN INTERACTIVE SCRIPTING ENGINE -->
+    <script>
+      // ============================================
+      // 1. BG PARTICLES FALLING CONTROLLER (Petals)
+      // ============================================
+      const canvas = document.getElementById('bg-canvas');
+      const ctx = canvas.getContext('2d');
+      const petals = [];
+      const petalColors = [
+        'rgba(167, 139, 250, 0.35)', // lavender
+        'rgba(56, 189, 248, 0.35)',  // sky blue
+        'rgba(139, 92, 246, 0.25)',  // violet
+        'rgba(233, 213, 255, 0.2)',   // light lavender
+        'rgba(14, 165, 233, 0.25)'    // sky blue deep
+      ];
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      class Petal {
+        constructor() {
+          this.reset();
+          this.y = Math.random() * canvas.height;
+        }
+
+        reset() {
+          this.x = Math.random() * canvas.width;
+          this.y = -20;
+          this.size = Math.random() * 6 + 5;
+          this.speedY = Math.random() * 0.6 + 0.3;
+          this.speedX = Math.random() * 0.5 - 0.25;
+          this.rotation = Math.random() * Math.PI * 2;
+          this.rotationSpeed = Math.random() * 0.01 - 0.005;
+          this.color = petalColors[Math.floor(Math.random() * petalColors.length)];
+          this.driftFrequency = Math.random() * 0.05 + 0.01;
+        }
+
+        update() {
+          this.y += this.speedY;
+          this.x += this.speedX + Math.sin(this.y * this.driftFrequency) * 0.4;
+          this.rotation += this.rotationSpeed;
+
+          if (this.y > canvas.height + 20 || this.x < -20 || this.x > canvas.width + 20) {
+            this.reset();
+          }
+        }
+
+        draw() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.rotation);
+          ctx.beginPath();
+          ctx.moveTo(0, -this.size / 2);
+          ctx.quadraticCurveTo(this.size / 2, 0, 0, this.size / 2);
+          ctx.quadraticCurveTo(-this.size / 2, 0, 0, -this.size / 2);
+          ctx.closePath();
+          ctx.fillStyle = this.color;
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      for (let i = 0; i < 45; i++) {
+        petals.push(new Petal());
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < petals.length; i++) {
+          petals[i].update();
+          petals[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+      }
+      animateParticles();
+
+
+      // ============================================
+      // 2. HAUNTING AESTHETIC 3D LAVENDER (Three.js)
+      // ============================================
+      const threeContainer = document.getElementById('three-container');
+      let scene, camera, renderer, lavenderGroup, controls;
+
+      function initThree() {
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0a0510, 0.04);
+
+        camera = new THREE.PerspectiveCamera(45, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 100);
+        camera.position.set(0, 0.5, 5);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        threeContainer.appendChild(renderer.domElement);
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 2.5;
+        controls.maxDistance = 7;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2;
+        controls.minPolarAngle = Math.PI / 4;
+
+        // Soft, gorgeous theme-aligned lighting
+        const ambientLight = new THREE.AmbientLight(0x2d1b4d, 1.2);
+        scene.add(ambientLight);
+
+        const pointLightLeft = new THREE.PointLight(0x38bdf8, 1.4, 15);
+        pointLightLeft.position.set(-4, 3, 3);
+        scene.add(pointLightLeft);
+
+        const pointLightRight = new THREE.PointLight(0xa78bfa, 2.0, 15);
+        pointLightRight.position.set(4, -1, 3);
+        scene.add(pointLightRight);
+
+        const fillWhite = new THREE.PointLight(0xffffff, 0.8, 20);
+        fillWhite.position.set(0, 5, 2);
+        scene.add(fillWhite);
+
+        // Group to hold the entire flower stem
+        lavenderGroup = new THREE.Group();
+        lavenderGroup.position.y = -1.2; // center vertically
+        scene.add(lavenderGroup);
+
+        buildLavender();
+
+        window.addEventListener('resize', () => {
+          if (!threeContainer || !camera || !renderer) return;
+          camera.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+        });
+
+        animateThree();
+      }
+
+      function buildLavender() {
+        // Olive Green stem
+        const stemMat = new THREE.MeshStandardMaterial({
+          color: 0x48703a,
+          roughness: 0.9,
+          metalness: 0.1
+        });
+
+        // 3D stem trunk
+        const mainStemGeo = new THREE.CylinderGeometry(0.04, 0.055, 3.2, 12);
+        const mainStem = new THREE.Mesh(mainStemGeo, stemMat);
+        mainStem.position.y = 1.0;
+        lavenderGroup.add(mainStem);
+
+        // Lavender buds colors representing Deep Lavender and Sky Blue
+        const bloomPalette = [
+          0xa78bfa, // soft lavender light
+          0x8B5CF6, // rich purple
+          0x6d28d9, // deep midnight violet
+          0x38bdf8, // light blue / sky blue
+          0x0ea5e9, // vibrant sky blue
+          0xc084fc  // ultra soft purple
+        ];
+
+        const budMaterials = bloomPalette.map(color => new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.65,
+          metalness: 0.2,
+          emissive: color,
+          emissiveIntensity: 0.15
+        }));
+
+        // Whorled structure for realistic flower clusters
+        const tiers = 15;
+        const budsPerTier = 6;
+        const lowerLimit = 1.2;
+        const upperLimit = 2.6;
+        const delta = upperLimit - lowerLimit;
+
+        for (let t = 0; t < tiers; t++) {
+          const ratio = t / (tiers - 1);
+          const yPos = lowerLimit + (ratio * delta);
+          const sizeTaper = 1.0 - (ratio * 0.45);
+          const radius = 0.14 * sizeTaper;
+
+          for (let b = 0; b < budsPerTier; b++) {
+            // Spiral distribution rotation
+            const angle = (b / budsPerTier) * Math.PI * 2 + (ratio * 1.8);
+            
+            const budGeo = new THREE.SphereGeometry(0.06 * sizeTaper, 8, 8);
+            budGeo.scale(1, 1.7, 0.9); // mold into a teardrop capsule seed shape
+
+            const randomMatIndex = Math.floor(Math.random() * budMaterials.length);
+            const budMesh = new THREE.Mesh(budGeo, budMaterials[randomMatIndex]);
+
+            // Set coordinates radially around center stem
+            const bx = Math.sin(angle) * radius;
+            const bz = Math.cos(angle) * radius;
+            const by = yPos + (Math.random() * 0.06 - 0.03); // minor random offset for natural organic variation
+
+            budMesh.position.set(bx, by, bz);
+
+            // Turn buds outward
+            budMesh.rotation.x = (Math.PI / 3.5) * Math.cos(angle);
+            budMesh.rotation.z = (Math.PI / 3.5) * -Math.sin(angle);
+            budMesh.rotation.y = -angle;
+
+            lavenderGroup.add(budMesh);
+          }
+        }
+
+        // Crowning blossom capsule at the very top tip
+        const topBlossomGeo = new THREE.ConeGeometry(0.07, 0.25, 8);
+        const topBlossom = new THREE.Mesh(topBlossomGeo, budMaterials[0]);
+        topBlossom.position.set(0, upperLimit + 0.12, 0);
+        lavenderGroup.add(topBlossom);
+
+        // Thin organic leaves from the bottom
+        const leafMat = new THREE.MeshStandardMaterial({
+          color: 0x416533,
+          roughness: 0.85,
+          side: THREE.DoubleSide
+        });
+
+        const numLeaves = 8;
+        for (let l = 0; l < numLeaves; l++) {
+          const leafProgress = l / (numLeaves - 1);
+          const leafY = 0.2 + (leafProgress * 0.8);
+          
+          // Slender ribbon plane leaf geometry
+          const leafGeo = new THREE.ConeGeometry(0.06, 0.8, 5);
+          leafGeo.scale(1, 1, 0.1); 
+          
+          const leafMesh = new THREE.Mesh(leafGeo, leafMat);
+          
+          // Angle outward from stem
+          const leafAngle = (l * (Math.PI * 2 / 3.5));
+          const distance = 0.07;
+          leafMesh.position.set(Math.sin(leafAngle) * distance, leafY, Math.cos(leafAngle) * distance);
+          
+          leafMesh.rotation.z = (0.5 + Math.random() * 0.3) * (Math.sin(leafAngle) > 0 ? 1 : -1);
+          leafMesh.rotation.x = (0.5 + Math.random() * 0.3) * (Math.cos(leafAngle) > 0 ? 1 : -1);
+          leafMesh.rotation.y = leafAngle;
+          
+          lavenderGroup.add(leafMesh);
+        }
+      }
+
+      let clock = new THREE.Clock();
+
+      function animateThree() {
+        requestAnimationFrame(animateThree);
+
+        const elapsed = clock.getElapsedTime();
+        
+        // Auto-sway the lavender gently (wind physics simulation)
+        if (lavenderGroup) {
+          lavenderGroup.rotation.z = Math.sin(elapsed * 1.2) * 0.045;
+          lavenderGroup.rotation.x = Math.cos(elapsed * 0.8) * 0.025;
+          
+          // Slowly auto-rotate so user sees it in full round context
+          lavenderGroup.rotation.y += 0.0035;
+        }
+
+        if (controls) {
+          controls.update();
+        }
+
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+        }
+      }
+
+      // Start rendering Three.js after load
+      window.addEventListener('DOMContentLoaded', () => {
+        initThree();
+      });
+
+
+      // ============================================
+      // 3. AUDIO ENGINE & COHESIVE SOUND CONTROLLER
+      // ============================================
+      const tracks = [
+        {
+          title: "Bring Me To Life (Orchestral Cover)",
+          artist: "Evanescence",
+          source: "https://www.mfiles.co.uk/mp3-downloads/chopin-nocturne-op9-no2.mp3", // Chopin's Nocturne - Beautiful romantic piano
+          duration: "3:30",
+          color: "skyblue",
+          youtube: "https://youtu.be/JixFMKqQU5w?si=Ghb4fGsN6_a2uV1l"
+        },
+        {
+          title: "In The End (Symphonic)",
+          artist: "Linkin Park",
+          source: "https://www.mfiles.co.uk/mp3-downloads/tchaikovsky-chanson-triste.mp3", // Melancholy classical strings & piano
+          duration: "3:12",
+          color: "lavender",
+          youtube: "https://youtu.be/eVTXPUF4Oz4?si=fSY9Y9M3dOE0l6ql"
+        },
+        {
+          title: "The World Is Ugly (Orchestral)",
+          artist: "My Chemical Romance",
+          source: "https://www.mfiles.co.uk/mp3-downloads/bach-air-on-a-g-string.mp3", // Deep, emotional orchestral vibes
+          duration: "4:06",
+          color: "violet",
+          youtube: "https://youtu.be/Sfmzkj5QSto?si=7pxEh9OwecGFz_sC"
+        },
+        {
+          title: "Seize The Day (Solo Piano Cover)",
+          artist: "Avenged Sevenfold",
+          source: "https://www.mfiles.co.uk/mp3-downloads/erik-satie-gymnopedie-no-1.mp3", // Satie's Gymnopedie - peaceful acoustic flow
+          duration: "3:01",
+          color: "lavender",
+          youtube: "https://youtu.be/jUkoL9RE72o?si=eVUCpLQ3DE2y1ap8"
+        },
+        {
+          title: "Love of My Life (Harp & Flute)",
+          artist: "Queen",
+          source: "https://www.mfiles.co.uk/mp3-downloads/fur-elise-for-harp.mp3", // Majestic harp rendering
+          duration: "2:45",
+          color: "skyblue",
+          youtube: "https://youtu.be/sUJkCXE4sAA?si=xkyIU3K6UcRUpCJE"
+        }
+      ];
+
+      let currentTrackIndex = 0;
+      let isPlaying = false;
+      let isMuted = false;
+
+      const audio = document.getElementById('audio-module');
+      const playerTitle = document.getElementById('player-title');
+      const playerArtist = document.getElementById('player-artist');
+      const playerPlayBtn = document.getElementById('player-play-btn');
+      const playerPlayIcon = document.getElementById('player-play-icon');
+      const scrubberProgress = document.getElementById('scrubber-progress');
+      const currentTimeLabel = document.getElementById('current-time');
+      const totalDurationLabel = document.getElementById('total-duration');
+      const volumeSlider = document.getElementById('volume-slider');
+      const muteIcon = document.getElementById('mute-icon');
+      const trackSelect = document.getElementById('track-select');
+      const miniVinyl = document.getElementById('mini-vinyl');
+      const equalizerBars = document.querySelectorAll('.equalizer-bar');
+
+      // Sync UI at boot
+      function updatePlayerUI() {
+        const track = tracks[currentTrackIndex];
+        playerTitle.textContent = track.title;
+        playerArtist.textContent = track.artist;
+        currentTimeLabel.textContent = "0:00";
+        totalDurationLabel.textContent = track.duration;
+        trackSelect.value = currentTrackIndex;
+
+        const ytLink = document.getElementById('player-yt-link');
+        if (ytLink) {
+          ytLink.href = track.youtube;
+        }
+
+        // Highlight Active Band Card Item
+        for (let i = 0; i < tracks.length; i++) {
+          const item = document.getElementById(`band-item-${i}`);
+          const playBtnCircle = document.getElementById(`play-btn-${i}`);
+          if (item) {
+            if (i === currentTrackIndex) {
+              item.classList.add('active-track');
+              if (playBtnCircle) {
+                playBtnCircle.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+                playBtnCircle.style.background = '#38bdf8';
+                playBtnCircle.style.color = '#020617';
+              }
+            } else {
+              item.classList.remove('active-track');
+              if (playBtnCircle) {
+                playBtnCircle.innerHTML = '<i class="fa-solid fa-play"></i>';
+                playBtnCircle.style.background = 'transparent';
+                playBtnCircle.style.color = '#38bdf8';
+              }
+            }
+          }
+        }
+      }
+
+      function loadTrack(index) {
+        currentTrackIndex = index;
+        audio.src = tracks[currentTrackIndex].source;
+        audio.load();
+        updatePlayerUI();
+      }
+
+      function selectTrack(index) {
+        if (currentTrackIndex === index) {
+          togglePlay();
+          return;
+        }
+
+        loadTrack(index);
+        audio.play().then(() => {
+          setPlayState(true);
+        }).catch(e => {
+          console.log("Audio play deferred awaiting interaction context", e);
+          setPlayState(false);
+        });
+      }
+
+      function setPlayState(active) {
+        isPlaying = active;
+        if (active) {
+          playerPlayIcon.className = "fa-solid fa-pause text-[9px]";
+          miniVinyl.classList.remove('spin-paused');
+          startEqualizer();
+        } else {
+          playerPlayIcon.className = "fa-solid fa-play text-[9px] ml-0.5";
+          miniVinyl.classList.add('spin-paused');
+          stopEqualizer();
+        }
+        
+        // Update selection indicators inside band lists
+        for (let i = 0; i < tracks.length; i++) {
+          const playBtnCircle = document.getElementById(`play-btn-${i}`);
+          if (playBtnCircle && i === currentTrackIndex) {
+            playBtnCircle.innerHTML = active ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+          }
+        }
+      }
+
+      function togglePlay() {
+        if (isPlaying) {
+          audio.pause();
+          setPlayState(false);
+        } else {
+          audio.play().then(() => {
+            setPlayState(true);
+          }).catch(err => {
+            console.log("Autoplay blocked by browser policy without pointer touch", err);
+          });
+        }
+      }
+
+      function nextTrack() {
+        let index = currentTrackIndex + 1;
+        if (index >= tracks.length) index = 0;
+        selectTrack(index);
+      }
+
+      function prevTrack() {
+        let index = currentTrackIndex - 1;
+        if (index < 0) index = tracks.length - 1;
+        selectTrack(index);
+      }
+
+      // Audio Time updating
+      audio.addEventListener('timeupdate', () => {
+        if (!audio.duration) return;
+        const ratio = (audio.currentTime / audio.duration) * 100;
+        scrubberProgress.style.width = `${ratio}%`;
+        
+        // Format time string
+        const currentMins = Math.floor(audio.currentTime / 60);
+        let currentSecs = Math.floor(audio.currentTime % 60);
+        if (currentSecs < 10) currentSecs = `0${currentSecs}`;
+        currentTimeLabel.textContent = `${currentMins}:${currentSecs}`;
+      });
+
+      // Track Ended Auto-Loop/Advance
+      audio.addEventListener('ended', () => {
+        nextTrack();
+      });
+
+      // Seek Track
+      function seekAudio(event) {
+        const container = document.getElementById('scrubber-container');
+        const clickX = event.offsetX;
+        const width = container.clientWidth;
+        const duration = audio.duration;
+        if (duration) {
+          audio.currentTime = (clickX / width) * duration;
+        }
+      }
+
+      // Volume & Mute logic
+      function updateVolume(val) {
+        audio.volume = val;
+        isMuted = val === 0;
+        updateVolumeIcon();
+      }
+
+      function toggleMute() {
+        isMuted = !isMuted;
+        if (isMuted) {
+          audio.volume = 0;
+          volumeSlider.value = 0;
+        } else {
+          audio.volume = 0.7;
+          volumeSlider.value = 0.7;
+        }
+        updateVolumeIcon();
+      }
+
+      function updateVolumeIcon() {
+        if (isMuted || audio.volume === 0) {
+          muteIcon.className = "fa-solid fa-volume-xmark";
+        } else if (audio.volume < 0.4) {
+          muteIcon.className = "fa-solid fa-volume-low";
+        } else {
+          muteIcon.className = "fa-solid fa-volume-high";
+        }
+      }
+
+      // Equalizer bars randomized sways
+      let eqInterval = null;
+      function startEqualizer() {
+        if (eqInterval) clearInterval(eqInterval);
+        eqInterval = setInterval(() => {
+          equalizerBars.forEach(bar => {
+            const randomHeight = Math.floor(Math.random() * 16) + 4; // heights range 4px to 20px
+            bar.style.height = `${randomHeight}px`;
+          });
+        }, 120);
+      }
+
+      function stopEqualizer() {
+        if (eqInterval) {
+          clearInterval(eqInterval);
+          eqInterval = null;
+        }
+        equalizerBars.forEach(bar => {
+          bar.style.height = "3px"; // reset back to mini
+        });
+      }
+
+      // Initialize defaults at boot
+      loadTrack(0);
+      audio.volume = 0.7;
+    </script>
+  </body>
+</html>
